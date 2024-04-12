@@ -26,6 +26,9 @@ public class TicketService implements ITicketService {
 
     @Override
     public void addTicket(Ticket ticket) {
+        if (ticket.getStatus() == null){
+            ticket.setStatus(Ticket.Status.OPEN);
+        }
         ticketDAO.addTicket(ticket);
     }
 
@@ -45,16 +48,16 @@ public class TicketService implements ITicketService {
     }
 
     /**
-     * Check if the ticket is resolved
+     * Check if the ticket can be commented.
      *
      * @param ticketId the ticket id
-     * @return true if the ticket is resolved, false otherwise
+     * @return true if the ticket can be commented, false otherwise
      */
     @Override
-    public boolean isTicketResolved(Integer ticketId) {
+    public boolean canTicketBeCommented(Integer ticketId) {
         Ticket ticket = ticketDAO.getTicketById(ticketId);
         if (ticket != null) {
-            return "RESOLVED".equals(ticket.getStatus());
+            return ticket.getStatus() != Ticket.Status.RESOLVED;
         }
         return false;
     }

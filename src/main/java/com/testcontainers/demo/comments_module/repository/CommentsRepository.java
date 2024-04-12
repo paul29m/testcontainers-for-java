@@ -1,32 +1,32 @@
-package com.testcontainers.demo.rating_module.repository;
+package com.testcontainers.demo.comments_module.repository;
 
 import java.util.List;
 
-import com.testcontainers.demo.rating_module.domain.Rating;
+import com.testcontainers.demo.comments_module.domain.Comment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class RatingsRepository implements IRatingsRepository {
+public class CommentsRepository implements ICommentsRepository {
 
-    public RatingsRepository(JdbcTemplate jdbcTemplate) {
+    public CommentsRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public List<Rating> findAllByTicketId(Integer ticketId) {
+    public List<Comment> findAllByTicketId(Integer ticketId) {
         return jdbcTemplate.query(
             "SELECT * FROM ratings WHERE ticketId = ?",
-            (row, i) -> new Rating(row.getInt("ticketId"), row.getString("comment"), row.getInt("stars")),
+            (row, i) -> new Comment(row.getInt("ticketId"), row.getString("commentText"), row.getInt("userId")),
             ticketId
         );
     }
 
     @Override
-    public void add(Integer ticketId, String comment, int stars) {
-        jdbcTemplate.update("INSERT INTO ratings (ticketId, comment, stars) VALUES (?, ?, ?)", ticketId, comment, stars);
+    public void add(Integer ticketId, String commentText, Integer userId) {
+        jdbcTemplate.update("INSERT INTO ratings (ticketId, commentText, userId) VALUES (?, ?, ?)", ticketId, commentText, userId);
     }
 
     public Boolean exists(Integer ticketId) {

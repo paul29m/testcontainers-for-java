@@ -2,11 +2,7 @@ package com.testcontainers.demo.integration;
 
 import com.testcontainers.demo.config.BaseRestAssuredIntegrationTest;
 import com.testcontainers.demo.config.PgContainerConfig;
-import com.testcontainers.demo.entity.Application;
-import com.testcontainers.demo.entity.SoftwareRelease;
-import com.testcontainers.demo.service.ApplicationService;
-import com.testcontainers.demo.service.SoftwareReleaseService;
-import io.restassured.response.ValidatableResponse;
+import io.restassured.response.Response;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -20,20 +16,17 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
-import java.time.LocalDate;
 
-import static io.restassured.RestAssured.delete;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 /*
  * Test class using the approach of having a configuration class with the testcontainers configurations
  */
-@Execution(ExecutionMode.CONCURRENT)
+@Execution(ExecutionMode.SAME_THREAD)
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = {
@@ -46,12 +39,6 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
     private static final Logger LOG = LoggerFactory.getLogger(ApiSoftwareReleaseTest.class);
 
     public static MockWebServer gitClientMockWebServer;
-
-    @Autowired
-    private SoftwareReleaseService softwareReleaseService;
-
-    @Autowired
-    private ApplicationService applicationService;
 
     /*
      * Dispatcher can be used to mock the GitClient service responses by using the query parameters
@@ -87,6 +74,7 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
         gitClientMockWebServer = new MockWebServer();
         gitClientMockWebServer.setDispatcher(dispatcher);
         gitClientMockWebServer.start(9091);
+        // TODO gitClientMockWebServer.
     }
 
     @AfterAll
@@ -95,49 +83,106 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
     }
 
     @Test
-    public void addRelease() {
-        ValidatableResponse validatableResponse = given(requestSpecification)
-            .body("{\"releaseDate\":\"2021-12-31\",\"description\":\"A test release\"}")
+    public void addSoftwareRelease() {
+        given(requestSpecification)
+            .body("{" +
+                "\"releaseDate\":\"2021-12-31\"," +
+                "\"description\":\"A test release\"}")
             .when()
             .post("/api/softwareRelease")
             .then()
             .statusCode(201)
-            .header("Location",  matchesPattern(".*/softwareRelease/\\d+"));
-
+            .header("Location", matchesPattern(".*/softwareRelease/\\d+"));
     }
 
+    /**
+     * Test case to add software release with application in one request.
+     * Expected a response header containing the ID of the created software release
+     */
     @Test
-    public void addReleaseWithApps() {
-        ValidatableResponse validatableResponse = given(requestSpecification)
-            .body("{\"releaseDate\":\"2021-12-31\",\"description\":\"A test release\",\"applications\": [{\"name\": \"New App1\", \"description\": \"App added with release\", \"owner\": \"Jane Doe\"},{\"name\": \"New App2\", \"description\": \"Another app added with release\", \"owner\": \"Jane Doe\"}]}")
+    public void addSoftwareReleaseWithApps() {
+        given(requestSpecification)
+            .body("{" +
+                "\"releaseDate\":\"2021-12-31\"," +
+                "\"description\":\"A test release\"," +
+                "\"applications\": [" +
+                "{\"name\": \"New App1\", \"description\": \"App added with release\", \"owner\": \"Jane Doe\"}," +
+                "{\"name\": \"New App2\", \"description\": \"Another app added with release\", \"owner\": \"Jane Doe\"}" +
+                "]}")
             .when()
             .post("/api/softwareRelease")
             .then()
             .statusCode(201)
-            .header("Location",  matchesPattern(".*/softwareRelease/\\d+"));
+            .header("Location", matchesPattern(".*/softwareRelease/\\d+"));
+    }
+
+    /**
+     * Test case to link application to a software release
+     * Expected the status code 200 at the link request
+     */
+    @Test
+    public void createLinkBetweenAppAndSoftwareRelease() {
+        // create an application
+        Response appResponse = given(requestSpecification)
+            .body("{" +
+                "\"name\": \"Test app\"," +
+                "\"description\" : \"A test application.\"," +
+                "\"owner\": \"Kate Williams\"" +
+                "}")
+            .when()
+            .post("/api/application");
+        Integer appId = getIdFromResponseHeader(appResponse);
+        // create a release
+        Response releaseResponse = given(requestSpecification)
+            .body("{" +
+                "\"releaseDate\":\"2024-12-31\"," +
+                "\"description\":\"A test release\"}")
+            .when()
+            .post("/api/softwareRelease");
+        Integer releaseId = getIdFromResponseHeader(releaseResponse);
+        // link application to release
+        given(requestSpecification)
+            .when()
+            .put("/api/softwareRelease/{appId}/{releaseId}", appId, releaseId)
+            .then()
+            .statusCode(200);
     }
 
     /**
      * Test case to find a release by id.
-     * Sends a GET request to find the added release in test seed.
-     * Expects the body of the response to match the added release and contain the git Tag from the mock client.
+     * Sends a GET request to find the added software release.
+     * Expects the body of the response to match the added release and contain the git Tag specific to the release and application from the mock client.
      */
     @Test
-    public void findReleaseWithTagsFromGit() {
+    public void findSoftwareReleaseWithTagsFromGit() {
         // create an application
-        Integer appId = applicationService.addApplication(new Application(null, "Test_V1", "Kesha Williams", "A test application.")).getId();
+        Response appResponse = given(requestSpecification)
+            .body("{" +
+                "\"name\": \"Test_V1\"," +
+                "\"description\" : \"A test application.\"," +
+                "\"owner\": \"Kate Williams\"" +
+                "}")
+            .when()
+            .post("/api/application");
+        Integer appId = getIdFromResponseHeader(appResponse);
+        ;
         // create a release
-        Integer releaseId = softwareReleaseService.addRelease(new SoftwareRelease(null, LocalDate.of(2025, 12, 31), "A test release", null));
-
+        Response releaseResponse = given(requestSpecification)
+            .body("{" +
+                "\"releaseDate\":\"2025-12-31\"," +
+                "\"description\":\"A test release\"}")
+            .when()
+            .post("/api/softwareRelease");
+        Integer releaseId = getIdFromResponseHeader(releaseResponse);
         // link application to release
         given(requestSpecification)
             .when()
-            .put("/api/softwareRelease/{appId}/{rId}", appId, releaseId)
-            .then()
-            .statusCode(200);
+            .put("/api/softwareRelease/{appId}/{releaseId}", appId, releaseId)
+            .then();
 
 //        gitClientMockWebServer.enqueue(new MockResponse().setBody(RELEASE_TAG)); //TODO add URL to work in parallel and to assure that this URL will be called by the test;
         // did not find a solution
+        // create dispacher
 
         given(requestSpecification)
             .when()
@@ -147,15 +192,37 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
             .statusCode(200)
             .body("description", is("A test release"))
             .body("releaseDate", is("2025-12-31"))
+            .body("applications.name", contains("Test_V1"))
+            .body("applications.description", contains("A test application."))
             .body("gitTags", contains("v1.1.2025"));
     }
 
+    /**
+     * Test case to find a software release by id.
+     * Sends a GET request to find the added software release.
+     * Expects the body of the response to match the added release and contain the git Tag from the mock client.
+     */
     @Test
     public void findRelease2WithTagsFromGit() {
         // create an application
-        Integer appId = applicationService.addApplication(new Application(null, "Test_V2", "Kesha Williams", "A test application.")).getId();
+        Response appResponse = given(requestSpecification)
+            .body("{" +
+                "\"name\": \"Test_V2\"," +
+                "\"description\" : \"A test application.\"," +
+                "\"owner\": \"Kate Williams\"" +
+                "}")
+            .when()
+            .post("/api/application");
+        Integer appId = getIdFromResponseHeader(appResponse);
+        ;
         // create a release
-        Integer releaseId = softwareReleaseService.addRelease(new SoftwareRelease(null, LocalDate.of(2026, 12, 31), "Test V2 release", null));
+        Response releaseResponse = given(requestSpecification)
+            .body("{" +
+                "\"releaseDate\":\"2026-12-31\"," +
+                "\"description\":\"Test V2 release\"}")
+            .when()
+            .post("/api/softwareRelease");
+        Integer releaseId = getIdFromResponseHeader(releaseResponse);
 
         // link application to release
         given(requestSpecification)
@@ -172,13 +239,22 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
             .statusCode(200)
             .body("description", is("Test V2 release"))
             .body("releaseDate", is("2026-12-31"))
+            .body("applications.name", contains("Test_V2"))
+            .body("applications.description", contains("A test application."))
             .body("gitTags", contains("v2.1.2026"));
     }
 
     @Test
     public void findReleaseWithIncompleteData() {
-         // create a release
-        Integer releaseId = softwareReleaseService.addRelease(new SoftwareRelease(null, LocalDate.of(2021, 12, 31), "A test release", null));
+        // create a release
+        Response response = given(requestSpecification)
+            .body("{" +
+                "\"releaseDate\":\"2021-12-31\"," +
+                "\"description\":\"A test release\"}")
+            .when()
+            .post("/api/softwareRelease");
+        Integer releaseId = getIdFromResponseHeader(response);
+
         given(requestSpecification)
             .when()
             .get("/api/softwareRelease/{releaseId}", releaseId)
@@ -199,5 +275,11 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
             .get("/actuator/health")
             .then()
             .statusCode(200);
+    }
+
+    @NotNull
+    private static Integer getIdFromResponseHeader(Response response) {
+        String headerWithId = response.getHeader("Location");
+        return Integer.parseInt(headerWithId.substring(headerWithId.lastIndexOf("/") + 1));
     }
 }

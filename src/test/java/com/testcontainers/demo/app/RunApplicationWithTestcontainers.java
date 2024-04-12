@@ -8,6 +8,8 @@ import org.springframework.boot.SpringApplication;
 
 import java.io.IOException;
 
+// TODO move to a more correct package / check documentation
+// https://www.baeldung.com/spring-boot-built-in-testcontainers
 public class RunApplicationWithTestcontainers {
 
     public static void main(String[] args) throws IOException {

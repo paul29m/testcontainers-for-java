@@ -1,6 +1,6 @@
 package com.testcontainers.demo.service;
 
-import com.testcontainers.demo.entity.Customer;
+import com.testcontainers.demo.entity.User;
 import com.testcontainers.demo.helper.DBConnectionProvider;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,48 +10,48 @@ import java.util.ArrayList;
 import java.util.List;
 import org.testcontainers.shaded.com.google.common.annotations.VisibleForTesting;
 
-public class CustomerService {
+public class UserService {
 
     private final DBConnectionProvider connectionProvider;
 
-    public CustomerService(DBConnectionProvider connectionProvider) {
+    public UserService(DBConnectionProvider connectionProvider) {
         this.connectionProvider = connectionProvider;
-        createCustomersTableIfNotExists();
+        createUsersTableIfNotExists();
     }
 
-    public void createCustomer(Customer customer) {
+    public void createUser(User user) {
         try (Connection conn = this.connectionProvider.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement("insert into customers(id,name) values(?,?)");
-            pstmt.setLong(1, customer.id());
-            pstmt.setString(2, customer.name());
+            PreparedStatement pstmt = conn.prepareStatement("insert into users(id,name) values(?,?)");
+            pstmt.setLong(1, user.id());
+            pstmt.setString(2, user.name());
             pstmt.execute();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public List<Customer> getAllCustomers() {
-        List<Customer> customers = new ArrayList<>();
+    public List<User> getAllUsers() {
+        List<User> users = new ArrayList<>();
 
         try (Connection conn = this.connectionProvider.getConnection()) {
-            PreparedStatement pstmt = conn.prepareStatement("select id,name from customers");
+            PreparedStatement pstmt = conn.prepareStatement("select id,name from users");
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong("id");
                 String name = rs.getString("name");
-                customers.add(new Customer(id, name));
+                users.add(new User(id, name));
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return customers;
+        return users;
     }
 
-    private void createCustomersTableIfNotExists() {
+    private void createUsersTableIfNotExists() {
         try (Connection conn = this.connectionProvider.getConnection()) {
             PreparedStatement pstmt = conn.prepareStatement(
                 """
-                create table if not exists customers (
+                create table if not exists users (
                     id bigint not null,
                     name varchar not null,
                     primary key (id)
@@ -69,7 +69,7 @@ public class CustomerService {
         try (Connection conn = this.connectionProvider.getConnection()) {
             PreparedStatement pstmt = conn.prepareStatement(
                 """
-                delete from customers where 1=1
+                delete from users where 1=1
                 """
             );
             pstmt.execute();

@@ -11,8 +11,7 @@ import static org.hamcrest.Matchers.hasItem;
 import com.testcontainers.demo.config.BaseRestAssuredIntegrationTest;
 import com.testcontainers.demo.config.KafkaContainerConfig;
 import com.testcontainers.demo.config.PgContainerConfig;
-import com.testcontainers.demo.entity.Ticket;
-import com.testcontainers.demo.rating_module.domain.Rating;
+import com.testcontainers.demo.comments_module.domain.Comment;
 import com.testcontainers.demo.util.KafkaRecordsReader;
 import io.restassured.response.ValidatableResponse;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -35,13 +34,13 @@ import java.util.stream.Collectors;
 /*
  * Test class using the approach of having a configuration class with the testcontainers configurations
  */
-@Execution(ExecutionMode.CONCURRENT)
+@Execution(ExecutionMode.SAME_THREAD)
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = {},
     classes = {KafkaContainerConfig.class, PgContainerConfig.class}
 )
-public class KafkaTicketRatingsTest extends BaseRestAssuredIntegrationTest {
+public class KafkaTicketCommentTest extends BaseRestAssuredIntegrationTest {
 
     @Autowired
     private KafkaContainer kafka;
@@ -53,8 +52,11 @@ public class KafkaTicketRatingsTest extends BaseRestAssuredIntegrationTest {
 
     @Test
     public void addTicket() {
-        given(requestSpecification).body(new Ticket(null, "ticket Title", "ticket description", null, null, "Open"))
-            .when()
+        given(requestSpecification)
+            .body("{" +
+                "\"title\": \"Ticket to be added\"," +
+                "\"description\" : \"Ticket description\"" +
+                "}").when()
             .post("/api/ticket")
             .then()
             .statusCode(201);
@@ -62,8 +64,11 @@ public class KafkaTicketRatingsTest extends BaseRestAssuredIntegrationTest {
 
     @Test
     public void getAllTickets() {
-        given(requestSpecification).body(new Ticket(null, "Title all tickets", "ticket description", null, null, "Open"))
-            .when()
+        given(requestSpecification)
+            .body("{" +
+                "\"title\": \"Ticket all tickets\"," +
+                "\"description\" : \"Ticket description\"" +
+                "}").when()
             .post("/api/ticket")
             .then()
             .statusCode(201);
@@ -74,19 +79,22 @@ public class KafkaTicketRatingsTest extends BaseRestAssuredIntegrationTest {
             .then()
             .statusCode(200)
             .body("size()", not(0))
-            .body("title", hasItem("Title all tickets"));
+            .body("title", hasItem("Ticket all tickets"));
     }
 
     @Test
     public void resolveTicket() {
-        int ticketId;
         // add ticket
-        String location = given(requestSpecification).body(new Ticket(null, "Ticket Title closed", "ticket description", null, null, "Open"))
+        String location = given(requestSpecification)
+            .body("{" +
+                "\"title\": \"Ticket to be resolved\"," +
+                "\"description\" : \"Ticket description\"" +
+                "}")
             .when()
             .post("/api/ticket")
             .then()
             .extract().response().getHeader("Location");
-        ticketId = Integer.parseInt(location.substring(location.lastIndexOf("/") + 1));
+        int ticketId = Integer.parseInt(location.substring(location.lastIndexOf("/") + 1));
 
         given(requestSpecification)
             .when()
@@ -102,62 +110,70 @@ public class KafkaTicketRatingsTest extends BaseRestAssuredIntegrationTest {
     }
 
     @Test
-    public void addTicketRating() {
+    public void addTicketComment() {
         //add ticket
-        int ticketId;
-        String location = given(requestSpecification).body(new Ticket(null, "ticket Title", "ticket description", null, null, "Open"))
+        String location = given(requestSpecification)
+            .body("{" +
+                "\"title\": \"Ticket to be commented\"," +
+                "\"description\" : \"Ticket description\"" +
+                "}")
             .when()
             .post("/api/ticket")
             .then().extract().response().getHeader("Location");
         // http://localhost:8080/ticket/1
-        ticketId = Integer.parseInt(location.substring(location.lastIndexOf("/") + 1));
+        int ticketId = Integer.parseInt(location.substring(location.lastIndexOf("/") + 1));
 
-        //resolve ticket
-        given(requestSpecification).when().put("/api/ticket/resolve/{ticketId}", ticketId).then().statusCode(200);
-
-        //add rating to ticket
-        String comment = "rating comment";
+        //add comment to ticket
         given(requestSpecification)
-            .body(new Rating(ticketId, comment, 5))
+            .body("{" +
+                "\"ticketId\": " + ticketId + "," +
+                "\"commentText\" : \"Comment text\"," +
+                "\"userId\" : 1" +
+                "}")
             .when()
-            .post("api/ratings/add")
+            .post("api/comments/add")
             .then()
             .statusCode(201);
 
         await()
             .untilAsserted(() -> {
-                List<ConsumerRecord<Rating, Rating>> records = getRecordsFromTopic();
+                List<ConsumerRecord<Comment, Comment>> records = getLastRecordsFromTopic(1);
                 Assertions.assertThat(records.size()).isNotZero();
-                Assertions.assertThat(records)
-                    .allMatch(kafkaRating ->
-                        kafkaRating.value().getTicketId().equals(ticketId));
-                Assertions.assertThat(records).anyMatch(record ->
-                    record.value().getComment().equals(comment));
+                Comment kafkaComment = records.get(0).value();
+
+                Assertions.assertThat(kafkaComment.getTicketId()).isEqualTo(ticketId);
+                Assertions.assertThat(kafkaComment.getCommentText()).isEqualTo("Comment text");
             });
+    }
+
+    @Test
+    public void getTicketComments() {
+        //add ticket
+        String location = given(requestSpecification)
+            .body("{" +
+                "\"title\": \"Ticket to be commented\"," +
+                "\"description\" : \"Ticket description\"" +
+                "}")
+            .when()
+            .post("/api/ticket")
+            .then().extract().response().getHeader("Location");
+        // http://localhost:8080/ticket/1
+        int ticketId = Integer.parseInt(location.substring(location.lastIndexOf("/") + 1));
 
         // add multiple comments to same ticket
+        String comment = "comment text";
         List<String> comments = new ArrayList<>();
         for (int i = 1; i <= 5; i++) {
             comments.add(comment + i);
             given(requestSpecification)
-                .body(new Rating(ticketId, comment + i, i))
+                .body("{" +
+                    "\"ticketId\": " + ticketId + "," +
+                    "\"commentText\" : \"" + comment + i + "\"," +
+                    "\"userId\" : 1" +
+                    "}")
                 .when()
-                .post("api/ratings/add");
+                .post("api/comments/add");
         }
-
-        await()
-            .untilAsserted(() -> {
-                List<ConsumerRecord<Rating, Rating>> ratingsFromKafka = getRecordsFromTopic();
-                Assertions.assertThat(ratingsFromKafka.size()).isNotZero();
-                Assertions.assertThat(ratingsFromKafka)
-                    .allMatch(kafkaRating ->
-                        kafkaRating.value().getTicketId().equals(ticketId));
-                Assertions.assertThat(
-                        ratingsFromKafka.stream().map(ratingsRecords ->
-                            ratingsRecords.value().getComment())
-                            .collect(Collectors.toList()))
-                    .containsAll(comments);
-            });
 
         //retrieve
         await()
@@ -165,46 +181,39 @@ public class KafkaTicketRatingsTest extends BaseRestAssuredIntegrationTest {
                 ValidatableResponse validatableResponse = given(requestSpecification)
                     .queryParam("ticketId", ticketId)
                     .when()
-                    .get("api/ratings")
+                    .get("api/comments")
                     .then();
                 validatableResponse.body("ticketId", everyItem(is(ticketId)));
                 for (int i = 0; i < 5; i++) {
-                    validatableResponse.body("comment", hasItem(comments.get(i)));
+                    validatableResponse.body("commentText", hasItem(comments.get(i)));
                 }
             });
     }
 
     /*
-     * Reads the records from the topic "ratings" and returns them  as a list of ConsumerRecord
+     * Reads the records from the topic "comments" and returns them  as a list of ConsumerRecord
      * @return a list of ConsumerRecord
      */
     @NotNull
-    private List<ConsumerRecord<Rating, Rating>> getRecordsFromTopic() {
+    private List<ConsumerRecord<Comment, Comment>> getLastRecordsFromTopic(int lastNoOfRecords) {
         KafkaRecordsReader.setBootstrapServers(kafka.getBootstrapServers());
-        final Map<TopicPartition, KafkaRecordsReader.OffsetInfo> partitionOffsetInfos = getOffsets(List.of("ratings"));
-        return readRecords(partitionOffsetInfos);
+        final Map<TopicPartition, KafkaRecordsReader.OffsetInfo> partitionOffsetInfos = getOffsets(List.of("comments"));
+        List<ConsumerRecord<Comment, Comment>> records = readRecords(partitionOffsetInfos);
+        int lastIndex = records.size() - lastNoOfRecords;
+        if (lastIndex > -1) {
+            return records.subList(lastIndex, records.size());
+        }
+        return records;
     }
-
-//    /**
-//     * This method is not working because we cannot find kafka-console-consumer.sh
-//     */
-//    private void getInfoFromKafka() {
-//        try {
-//            Container.ExecResult result = kafka.execInContainer("/usr/bin/kafka-console-consumer.sh", "--bootstrap-server", "localhost:9092", "--topic", "ratings", "--from-beginning");
-//            System.out.println(result.getStdout());
-//        } catch (IOException | InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
 
     @Test
     public void addRatingWithoutTicket() {
         int ticketId = 6;
 
         given(requestSpecification)
-            .body(new Rating(ticketId, "rating comment", 5))
+            .body(new Comment(ticketId, "rating comment", 5))
             .when()
-            .post("api/ratings/add")
+            .post("api/comment/add")
             .then()
             .statusCode(404);
     }

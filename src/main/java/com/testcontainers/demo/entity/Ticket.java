@@ -13,18 +13,14 @@ public class Ticket {
     private String description;
 
     @ManyToOne
-    @JoinColumn(name = "application_id")
-    private Application application;
-
-    @ManyToOne
     @JoinTable(
         name = "ticket_release",
         joinColumns = @JoinColumn(name = "ticket_fk"),
-        inverseJoinColumns = @JoinColumn(name = "release_fk")
+        inverseJoinColumns = @JoinColumn(name = "softwareRelease_fk")
     )
     private SoftwareRelease softwareRelease;
 
-    private String status;
+    private Status status;
 
     public Ticket() {}
 
@@ -32,23 +28,25 @@ public class Ticket {
         Integer id,
         String title,
         String description,
-        Application application,
         SoftwareRelease softwareRelease,
         String status
     ) {
         this.id = id;
         this.title = title;
         this.description = description;
-        this.application = application;
         this.softwareRelease = softwareRelease;
-        this.status = status;
+        this.status = Status.valueOf(status);
     }
 
-    public String getStatus() {
+    public Status getStatus() {
         return status;
     }
 
     public void setStatus(String status) {
+        this.status = Status.valueOf(status);
+    }
+
+    public void setStatus(Status status) {
         this.status = status;
     }
 
@@ -76,19 +74,15 @@ public class Ticket {
         this.description = description;
     }
 
-    public Application getApplication() {
-        return application;
-    }
-
-    public void setApplication(Application application) {
-        this.application = application;
-    }
-
     public SoftwareRelease getRelease() {
         return softwareRelease;
     }
 
     public void setRelease(SoftwareRelease softwareRelease) {
         this.softwareRelease = softwareRelease;
+    }
+
+    public enum Status {
+        OPEN, IN_PROGRESS, RESOLVED
     }
 }
