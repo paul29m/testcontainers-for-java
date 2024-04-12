@@ -10,5 +10,5 @@ public interface ITicketService {
     void updateTicket(Ticket ticket);
     void deleteTicket(Integer ticketId);
     void resolveTicket(Integer ticketId);
-    boolean isTicketResolved(Integer ticketId);
+    boolean canTicketBeCommented(Integer ticketId);
 }

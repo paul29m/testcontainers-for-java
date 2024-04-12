@@ -40,7 +40,7 @@ Also, we have used the latest version of *maven-surefire-plugin* to support JUni
 
 == Implement business logic
 
-We are going to create *CustomerService* class to manage customer details.
+We are going to create *CustomerService* class to manage user details.
 
 First let us create a *Customer* class as follows:
 
@@ -66,9 +66,9 @@ include::{codebase}/src/main/java/com/testcontainers/demo/CustomerService.java[]
 Let us understand what is going on in CustomerService class.
 
 * We are calling *connectionProvider.getConnection()* method to get a database Connection using JDBC API
-* We have the *createCustomersTableIfNotExists()* method that creates the customers table if it does not already exist.
-* We have *createCustomer()* method that inserts a new customer record into the database.
-* We have the *getAllCustomers()* method that fetches all rows from *customers* table, populates data into *Customer* objects
+* We have the *createCustomersTableIfNotExists()* method that creates the users table if it does not already exist.
+* We have *createCustomer()* method that inserts a new user record into the database.
+* We have the *getAllCustomers()* method that fetches all rows from *users* table, populates data into *Customer* objects
   and returns a list of Customer objects.
 
 Now let us see how we can test *CustomerService* logic using Testcontainers.
@@ -97,9 +97,9 @@ Let us understand the code in our CustomerServiceTest.
 * The Postgres container is started using JUnit 5 *@BeforeAll* callback, which gets executed before running any test methods.
 * In *@BeforeEach* callback method, which gets executed before running every test method, we have created a *DBConnectionProvider* instance
   by passing the JDBC connection parameters obtained from the Postgres container and also created a *CustomerService* instance.
-  In the *CustomerService* constructor, we are creating the customers table if it does not already exist.
-* We have a *shouldGetCustomers()* test where we are inserting 2 customer records into the database, fetching all the existing customers
-  and asserting the number of customers.
+  In the *CustomerService* constructor, we are creating the users table if it does not already exist.
+* We have a *shouldGetCustomers()* test where we are inserting 2 user records into the database, fetching all the existing users
+  and asserting the number of users.
 * Finally, we are stopping the postgres container in *@AfterAll* callback method, which gets executed after all the test methods
   in that class are executed.
 

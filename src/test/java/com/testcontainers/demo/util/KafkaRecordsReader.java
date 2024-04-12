@@ -1,6 +1,6 @@
 package com.testcontainers.demo.util;
 
-import com.testcontainers.demo.rating_module.domain.Rating;
+import com.testcontainers.demo.comments_module.domain.Comment;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -33,7 +33,7 @@ public class KafkaRecordsReader {
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     }
 
-    public static List<ConsumerRecord<Rating, Rating>> readRecords(final Map<TopicPartition, OffsetInfo> offsetInfos) {
+    public static List<ConsumerRecord<Comment, Comment>> readRecords(final Map<TopicPartition, OffsetInfo> offsetInfos) {
         final Properties readerProps = new Properties();
         readerProps.putAll(props);
         readerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, "record-reader");
@@ -43,8 +43,8 @@ public class KafkaRecordsReader {
             partitionToReadStatusMap.put(tp, offsetInfo.beginOffset == offsetInfo.endOffset);
         });
 
-        final List<ConsumerRecord<Rating, Rating>> cachedRecords = new ArrayList<>();
-        try (final KafkaConsumer<Rating, Rating> consumer = new KafkaConsumer<>(readerProps)) {
+        final List<ConsumerRecord<Comment, Comment>> cachedRecords = new ArrayList<>();
+        try (final KafkaConsumer<Comment, Comment> consumer = new KafkaConsumer<>(readerProps)) {
             consumer.assign(offsetInfos.keySet());
             for (final Map.Entry<TopicPartition, OffsetInfo> entry : offsetInfos.entrySet()) {
                 consumer.seek(entry.getKey(), entry.getValue().beginOffset);
@@ -52,8 +52,8 @@ public class KafkaRecordsReader {
 
             boolean close = false;
             while (!close) {
-                final ConsumerRecords<Rating, Rating> consumerRecords = consumer.poll(Duration.ofMillis(100));
-                for (final ConsumerRecord<Rating, Rating> record : consumerRecords) {
+                final ConsumerRecords<Comment, Comment> consumerRecords = consumer.poll(Duration.ofMillis(100));
+                for (final ConsumerRecord<Comment, Comment> record : consumerRecords) {
                     cachedRecords.add(record);
                     final TopicPartition currentTp = new TopicPartition(record.topic(), record.partition());
                     if (record.offset() + 1 == offsetInfos.get(currentTp).endOffset) {
@@ -77,9 +77,9 @@ public class KafkaRecordsReader {
         offsetReaderProps.put(ConsumerConfig.CLIENT_ID_CONFIG, "offset-reader");
 
         final Map<TopicPartition, OffsetInfo> partitionOffsetInfo = new HashMap<>();
-        try (final KafkaConsumer<Rating, Rating> consumer = new KafkaConsumer<>(offsetReaderProps)) {
+        try (final KafkaConsumer<Comment, Comment> consumer = new KafkaConsumer<>(offsetReaderProps)) {
             final List<PartitionInfo> partitionInfos = new ArrayList<>();
-            topics.forEach(topic -> partitionInfos.addAll(consumer.partitionsFor("ratings")));
+            topics.forEach(topic -> partitionInfos.addAll(consumer.partitionsFor("comments")));
             final Set<TopicPartition> topicPartitions = partitionInfos
                     .stream()
                     .map(x -> new TopicPartition(x.topic(), x.partition()))

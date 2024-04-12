@@ -7,6 +7,7 @@ import com.testcontainers.demo.config.BaseRestAssuredIntegrationTest;
 import com.testcontainers.demo.config.PgContainerConfig;
 import com.testcontainers.demo.entity.Application;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.jupiter.api.AfterAll;
@@ -27,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 /*
  * Test class using the approach of having a configuration class with the testcontainers configurations
  */
-@Execution(ExecutionMode.CONCURRENT)
+@Execution(ExecutionMode.SAME_THREAD)
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = {
@@ -64,36 +65,48 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
 
     /**
      * Test case to add an application.
-     * Sends a POST request with an application body and expects a status code of 201 or 409.
+     * Sends a POST request with an application body and expects a status code of 201.
      */
     @Test
     public void addApplication() {
         given(requestSpecification)
-            .body(new Application(null, "Test Application add", "Kate Williams", "A test application."))
+            .body("{" +
+                "\"name\": \"Test Application add\"," +
+                "\"description\" : \"A test application.\"," +
+                "\"owner\": \"Kate Williams\"" +
+                "}")
             .when()
             .post("/api/application")
             .then()
             .statusCode(is(201))
             .body("id", notNullValue())
-            .body("name", containsString("Test Application add"))
+            .body("name", is("Test Application add"))
             .body("description", is("A test application."))
             .body("owner", is("Kate Williams"));
     }
 
     /**
      * Test case to add an application that already exists
-     * Sends a POST request with an application body and expects a status code of 201 or 409.
+     * Sends a POST request with an application body and expects a status code of 409.
      */
     @Test
     public void addApplicationAlreadyExists() {
         given(requestSpecification)
-            .body(new Application(null, "Test Application existing", "Kate Williams", "A test application."))
+            .body("{" +
+                "\"name\": \"Test Application existing\"," +
+                "\"description\" : \"A test application.\"," +
+                "\"owner\": \"Kate Williams\"" +
+                "}")
             .when()
             .post("/api/application")
             .then()
             .statusCode(is(201));
         given(requestSpecification)
-            .body(new Application(null, "Test Application existing", "Kate Williams", "A test application."))
+            .body("{" +
+                "\"name\": \"Test Application existing\"," +
+                "\"description\" : \"A test application.\"," +
+                "\"owner\": \"Kate Williams\"" +
+                "}")
             .when()
             .post("/api/application")
             .then()
@@ -107,19 +120,22 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
      */
     @Test
     public void findApplication() {
-        ValidatableResponse validatableResponse = given(requestSpecification)
-            .body(new Application(null, "Test Application find", "Kate Williams", "A test application."))
+        Response responseContent = given(requestSpecification)
+            .body("{" +
+                "\"name\": \"Test Application find\"," +
+                "\"description\" : \"A test application.\"," +
+                "\"owner\": \"Kate Williams\"" +
+                "}")
             .when()
-            .post("/api/application")
-            .then();
-        Application response = validatableResponse.extract().response().body().as(Application.class);
+            .post("/api/application");
+        Application response = responseContent.body().as(Application.class);
 
         given(requestSpecification)
             .when()
             .get("/api/application/{id}", response.getId())
             .then()
             .body("id", is(response.getId()))
-            .body("name", containsString("Test Application find"))
+            .body("name", is("Test Application find"))
             .body("description", is("A test application."))
             .body("owner", is("Kate Williams"));
     }
@@ -131,38 +147,49 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
      */
     @Test
     public void updateApplication() {
-        ValidatableResponse validatableResponse = given(requestSpecification)
-            .body(new Application(null, "Test Application update", "Kate Williams", "A test application."))
+        Response responseContent  = given(requestSpecification)
+            .body("{" +
+                "\"name\": \"Test Application update\"," +
+                "\"description\" : \"A test application.\"," +
+                "\"owner\": \"Kate Williams\"" +
+                "}")
             .when()
-            .post("/api/application")
-            .then();
-        Application response = validatableResponse.extract().response().body().as(Application.class);
+            .post("/api/application");
+        Application response = responseContent.body().as(Application.class);
 
         given(requestSpecification)
-            .body(new Application(response.getId(), "Updated Application", "John Doe", "An updated application."))
+            .body("{" +
+                "\"id\": \" "+ response.getId() + "\"," +
+                "\"name\": \"Updated Application\"," +
+                "\"description\" : \"An updated application.\"," +
+                "\"owner\": \"John Doe\"" +
+                "}")
             .when()
             .put("/api/application")
             .then()
             .statusCode(HttpStatus.OK.value())
             .body("id", is(response.getId()))
-            .body("name", containsString("Updated Application"))
+            .body("name", is("Updated Application"))
             .body("owner", is("John Doe"))
             .body("description", is("An updated application."));
     }
 
     /**
      * Test case to verify the deletion of an application.
-     * Finds an application and then sends a DELETE request to remove it.
+     * Adds an application and then sends a DELETE request to remove it.
      * Expects a status code of 204.
      */
     @Test
     public void deleteApplication() {
-        ValidatableResponse validatableResponse = given(requestSpecification)
-            .body(new Application(null, "Test Application delete", "Kate Williams", "A test application."))
+        Response responseContent = given(requestSpecification)
+            .body("{" +
+                "\"name\": \"Test Application delete\"," +
+                "\"description\" : \"A test application.\"," +
+                "\"owner\": \"Kate Williams\"" +
+                "}")
             .when()
-            .post("/api/application")
-            .then();
-        Application response = validatableResponse.extract().response().body().as(Application.class);
+            .post("/api/application");
+        Application response = responseContent.body().as(Application.class);
 
         given(requestSpecification)
             .when()
@@ -174,31 +201,39 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void addApplication2() {
         given(requestSpecification)
-            .body(new Application(null, "Test Application 2 add", "Kate Williams", "A test application."))
+            .body("{" +
+                "\"name\": \"Test Application 2 add\"," +
+                "\"description\" : \"A test application.\"," +
+                "\"owner\": \"Kate Williams\"" +
+                "}")
             .when()
             .post("/api/application")
             .then()
             .statusCode(is(201))
             .body("id", notNullValue())
-            .body("name", containsString("Test Application 2 add"))
+            .body("name", is("Test Application 2 add"))
             .body("description", is("A test application."))
             .body("owner", is("Kate Williams"));
     }
 
+    @Test
     public void findApplication2() {
-        ValidatableResponse validatableResponse = given(requestSpecification)
-            .body(new Application(null, "Test Application find", "Kate Williams", "A test application."))
+        Response responseContent = given(requestSpecification)
+            .body("{" +
+                "\"name\": \"Test Application find 2\"," +
+                "\"description\" : \"A test application.\"," +
+                "\"owner\": \"Kate Williams\"" +
+                "}")
             .when()
-            .post("/api/application")
-            .then();
-        Application response = validatableResponse.extract().response().body().as(Application.class);
+            .post("/api/application");
+        Application response = responseContent.body().as(Application.class);
 
         given(requestSpecification)
             .when()
             .get("/api/application/{id}", response.getId())
             .then()
             .body("id", is(response.getId()))
-            .body("name", containsString("Test Application find"))
+            .body("name", is("Test Application find 2"))
             .body("description", is("A test application."))
             .body("owner", is("Kate Williams"));
     }
@@ -210,34 +245,49 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
      */
     @Test
     public void updateApplication2() {
-        ValidatableResponse validatableResponse = given(requestSpecification)
-            .body(new Application(null, "Test Application 2 update", "Kate Williams", "A test application 2"))
+        Response response = given(requestSpecification)
+            .body("{" +
+                "\"name\": \"Test Application 2 update\"," +
+                "\"description\" : \"A test application.\"," +
+                "\"owner\": \"Kate Williams\"" +
+                "}")
             .when()
-            .post("/api/application")
-            .then();
-        Application response = validatableResponse.extract().response().body().as(Application.class);
+            .post("/api/application");
+        Application appResponse = response.body().as(Application.class);
 
         given(requestSpecification)
-            .body(new Application(response.getId(), "Updated Application 2", "John Doe", "An updated application 2"))
+            .body("{" +
+                "\"id\": \" "+ appResponse.getId() + "\"," +
+                "\"name\": \"Updated Application 2\"," +
+                "\"description\" : \"An updated application 2\"," +
+                "\"owner\": \"John Doe\"" +
+                "}")
             .when()
             .put("/api/application")
             .then()
-            .statusCode(HttpStatus.OK.value());
+            .statusCode(HttpStatus.OK.value())
+            .body("id", is(appResponse.getId()))
+            .body("name", is("Updated Application 2"))
+            .body("owner", is("John Doe"))
+            .body("description", is("An updated application 2"));
     }
 
     /**
      * Test case to verify the deletion of an application.
-     * Finds an application and then sends a DELETE request to remove it.
+     * Adds an application and then sends a DELETE request to remove it.
      * Expects a status code of 204.
      */
     @Test
     public void deleteApplication2() {
-        ValidatableResponse validatableResponse = given(requestSpecification)
-            .body(new Application(null, "Test Application 2 delete", "Kate Williams 2", "A test application."))
+        Response responseContent = given(requestSpecification)
+            .body("{" +
+                "\"name\": \"Test Application 2 delete\"," +
+                "\"description\" : \"application 2 delete\"," +
+                "\"owner\": \"John Doe\"" +
+                "}")
             .when()
-            .post("/api/application")
-            .then();
-        Application response = validatableResponse.extract().response().body().as(Application.class);
+            .post("/api/application");
+        Application response = responseContent.body().as(Application.class);
 
         given(requestSpecification)
             .when()

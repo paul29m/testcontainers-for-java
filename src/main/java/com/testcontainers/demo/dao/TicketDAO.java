@@ -35,7 +35,6 @@ public class TicketDAO implements ITicketDAO {
         Ticket ticket1 = getTicketById(ticket.getId());
 
         ticket1.setDescription(ticket.getDescription());
-        ticket1.setApplication(ticket.getApplication());
         ticket1.setTitle(ticket.getTitle());
 
         entityManager.flush();
