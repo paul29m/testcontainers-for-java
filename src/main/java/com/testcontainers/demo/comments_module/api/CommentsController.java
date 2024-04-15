@@ -53,7 +53,7 @@ public class CommentsController {
     }
 
     @GetMapping
-    public List<Comment> getRatings(@RequestParam Integer ticketId) {
+    public List<Comment> getComments(@RequestParam Integer ticketId) {
         return commentsRepository.findAllByTicketId(ticketId);
     }
 }
