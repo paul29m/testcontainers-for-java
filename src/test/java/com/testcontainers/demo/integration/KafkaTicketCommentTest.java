@@ -10,8 +10,8 @@ import static org.hamcrest.Matchers.hasItem;
 
 import com.testcontainers.demo.config.BaseRestAssuredIntegrationTest;
 import com.testcontainers.demo.config.KafkaContainerConfig;
-import com.testcontainers.demo.config.PgContainerConfig;
 import com.testcontainers.demo.comments_module.domain.Comment;
+import com.testcontainers.demo.config.PgContainerConfig;
 import com.testcontainers.demo.util.KafkaRecordsReader;
 import io.restassured.response.ValidatableResponse;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -29,7 +29,6 @@ import org.testcontainers.containers.KafkaContainer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /*
  * Test class using the approach of having a configuration class with the testcontainers configurations
