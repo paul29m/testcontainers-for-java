@@ -1,7 +1,7 @@
-package com.testcontainers.demo.comments_module.api;
+package com.testcontainers.demo.api;
 
-import com.testcontainers.demo.comments_module.domain.Comment;
-import com.testcontainers.demo.comments_module.repository.CommentsRepository;
+import com.testcontainers.demo.entity.Comment;
+import com.testcontainers.demo.dao.CommentsDAO;
 
 import java.util.List;
 
@@ -20,13 +20,13 @@ public class CommentsController {
 
     private final KafkaTemplate<String, Comment> kafkaTemplate;
 
-    private final CommentsRepository commentsRepository;
+    private final CommentsDAO commentsRepository;
 
     private final TicketService     ticketService;
 
     public CommentsController(
         KafkaTemplate<String, Comment> kafkaTemplate,
-        CommentsRepository commentsRepository,
+        CommentsDAO commentsRepository,
         TicketService ticketService
     ) {
         this.kafkaTemplate = kafkaTemplate;

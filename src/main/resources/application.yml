@@ -6,7 +6,7 @@ spring:
     listener:
       missingTopicsFatal: false
     consumer:
-      properties.spring.json.trusted.packages: com.testcontainers.demo.comments_module.domain
+      properties.spring.json.trusted.packages: com.testcontainers.demo.entity
       auto-offset-reset: earliest
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
     producer:

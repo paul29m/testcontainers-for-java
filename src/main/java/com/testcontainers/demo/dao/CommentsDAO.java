@@ -1,15 +1,15 @@
-package com.testcontainers.demo.comments_module.repository;
+package com.testcontainers.demo.dao;
 
 import java.util.List;
 
-import com.testcontainers.demo.comments_module.domain.Comment;
+import com.testcontainers.demo.entity.Comment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class CommentsRepository implements ICommentsRepository {
+public class CommentsDAO implements ICommentsDAO {
 
-    public CommentsRepository(JdbcTemplate jdbcTemplate) {
+    public CommentsDAO(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 

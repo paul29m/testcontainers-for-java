@@ -1,6 +1,6 @@
 package com.testcontainers.demo.util;
 
-import com.testcontainers.demo.comments_module.domain.Comment;
+import com.testcontainers.demo.entity.Comment;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

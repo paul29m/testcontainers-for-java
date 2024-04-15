@@ -1,4 +1,4 @@
-package com.testcontainers.demo.comments_module.domain;
+package com.testcontainers.demo.entity;
 
 import java.io.Serializable;
 

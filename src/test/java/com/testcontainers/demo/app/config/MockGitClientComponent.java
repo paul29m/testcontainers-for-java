@@ -1,4 +1,4 @@
-package com.testcontainers.demo.config;
+package com.testcontainers.demo.app.config;
 
 import jakarta.annotation.PreDestroy;
 
@@ -17,7 +17,7 @@ public class MockGitClientComponent {
 
     public static void setupGitClientMock() throws IOException {
         gitClientMockWebServer = new MockWebServer();
-        gitClientMockWebServer.start(9091);
+        gitClientMockWebServer.start(9092);
         for (int i = 0; i < 100; i++) {
             gitClientMockWebServer.enqueue(new MockResponse().setBody("version" + i));
         }

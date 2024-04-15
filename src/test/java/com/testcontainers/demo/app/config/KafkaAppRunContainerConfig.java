@@ -1,4 +1,4 @@
-package com.testcontainers.demo.config;
+package com.testcontainers.demo.app.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

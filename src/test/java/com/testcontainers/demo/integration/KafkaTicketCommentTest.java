@@ -10,7 +10,7 @@ import static org.hamcrest.Matchers.hasItem;
 
 import com.testcontainers.demo.config.BaseRestAssuredIntegrationTest;
 import com.testcontainers.demo.config.KafkaContainerConfig;
-import com.testcontainers.demo.comments_module.domain.Comment;
+import com.testcontainers.demo.entity.Comment;
 import com.testcontainers.demo.config.PgContainerConfig;
 import com.testcontainers.demo.util.KafkaRecordsReader;
 import io.restassured.response.ValidatableResponse;
