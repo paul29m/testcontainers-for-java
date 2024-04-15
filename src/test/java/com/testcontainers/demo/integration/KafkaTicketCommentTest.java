@@ -52,10 +52,13 @@ public class KafkaTicketCommentTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void addTicket() {
         given(requestSpecification)
-            .body("{" +
-                "\"title\": \"Ticket to be added\"," +
-                "\"description\" : \"Ticket description\"" +
-                "}").when()
+            .body("""
+                {
+                    "title": "Ticket to be added",
+                    "description" : "Ticket description"
+                }
+                """)
+            .when()
             .post("/api/ticket")
             .then()
             .statusCode(201);
@@ -64,10 +67,13 @@ public class KafkaTicketCommentTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void getAllTickets() {
         given(requestSpecification)
-            .body("{" +
-                "\"title\": \"Ticket all tickets\"," +
-                "\"description\" : \"Ticket description\"" +
-                "}").when()
+            .body("""
+                {
+                    "title": "Ticket all tickets",
+                    "description" : "Ticket description"
+                }
+                """)
+            .when()
             .post("/api/ticket")
             .then()
             .statusCode(201);
@@ -85,10 +91,12 @@ public class KafkaTicketCommentTest extends BaseRestAssuredIntegrationTest {
     public void resolveTicket() {
         // add ticket
         String location = given(requestSpecification)
-            .body("{" +
-                "\"title\": \"Ticket to be resolved\"," +
-                "\"description\" : \"Ticket description\"" +
-                "}")
+            .body("""
+                {
+                    "title": "Ticket to be resolved",
+                    "description" : "Ticket description"
+                }
+                """)
             .when()
             .post("/api/ticket")
             .then()
@@ -112,10 +120,12 @@ public class KafkaTicketCommentTest extends BaseRestAssuredIntegrationTest {
     public void addTicketComment() {
         //add ticket
         String location = given(requestSpecification)
-            .body("{" +
-                "\"title\": \"Ticket to be commented\"," +
-                "\"description\" : \"Ticket description\"" +
-                "}")
+            .body("""
+                {
+                    "title": "Ticket to be commented",
+                    "description" : "Ticket description"
+                }
+                """)
             .when()
             .post("/api/ticket")
             .then().extract().response().getHeader("Location");
@@ -149,10 +159,12 @@ public class KafkaTicketCommentTest extends BaseRestAssuredIntegrationTest {
     public void getTicketComments() {
         //add ticket
         String location = given(requestSpecification)
-            .body("{" +
-                "\"title\": \"Ticket to be commented\"," +
-                "\"description\" : \"Ticket description\"" +
-                "}")
+            .body("""
+                {
+                    "title": "Ticket to be commented",
+                    "description" : "Ticket description"
+                }
+                """)
             .when()
             .post("/api/ticket")
             .then().extract().response().getHeader("Location");
@@ -210,7 +222,13 @@ public class KafkaTicketCommentTest extends BaseRestAssuredIntegrationTest {
         int ticketId = 6;
 
         given(requestSpecification)
-            .body(new Comment(ticketId, "rating comment", 5))
+            .body(""" 
+                {"
+                "ticketId": 6,
+                "commentText" : " Comment text ",
+                "userId" : 1"
+                "}
+                """)
             .when()
             .post("api/comment/add")
             .then()

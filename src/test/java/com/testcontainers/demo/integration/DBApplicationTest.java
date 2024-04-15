@@ -68,11 +68,13 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void addApplication() {
         given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test Application add\"," +
-                "\"description\" : \"A test application.\"," +
-                "\"owner\": \"Kate Williams\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test Application add",
+                    "description" : "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application")
             .then()
@@ -90,21 +92,25 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void addApplicationAlreadyExists() {
         given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test Application existing\"," +
-                "\"description\" : \"A test application.\"," +
-                "\"owner\": \"Kate Williams\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test Application existing",
+                    "description" : "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application")
             .then()
             .statusCode(is(201));
         given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test Application existing\"," +
-                "\"description\" : \"A test application.\"," +
-                "\"owner\": \"Kate Williams\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test Application existing",
+                    "description" : "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application")
             .then()
@@ -119,11 +125,13 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void findApplication() {
         Response responseContent = given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test Application find\"," +
-                "\"description\" : \"A test application.\"," +
-                "\"owner\": \"Kate Williams\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test Application find",
+                    "description" : "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application");
         Application response = responseContent.body().as(Application.class);
@@ -146,11 +154,13 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void updateApplication() {
         Response responseContent  = given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test Application update\"," +
-                "\"description\" : \"A test application.\"," +
-                "\"owner\": \"Kate Williams\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test Application update",
+                    "description" : "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application");
         Application response = responseContent.body().as(Application.class);
@@ -180,11 +190,13 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void deleteApplication() {
         Response responseContent = given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test Application delete\"," +
-                "\"description\" : \"A test application.\"," +
-                "\"owner\": \"Kate Williams\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test Application delete",
+                    "description" : "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application");
         Application response = responseContent.body().as(Application.class);
@@ -199,11 +211,13 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void addApplication2() {
         given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test Application 2 add\"," +
-                "\"description\" : \"A test application.\"," +
-                "\"owner\": \"Kate Williams\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test Application 2 add",
+                    "description" : "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application")
             .then()
@@ -217,11 +231,13 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void findApplication2() {
         Response responseContent = given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test Application find 2\"," +
-                "\"description\" : \"A test application.\"," +
-                "\"owner\": \"Kate Williams\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test Application find 2",
+                    "description" : "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application");
         Application response = responseContent.body().as(Application.class);
@@ -244,11 +260,13 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void updateApplication2() {
         Response response = given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test Application 2 update\"," +
-                "\"description\" : \"A test application.\"," +
-                "\"owner\": \"Kate Williams\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test Application 2 update",
+                    "description" : "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application");
         Application appResponse = response.body().as(Application.class);
@@ -278,11 +296,13 @@ public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void deleteApplication2() {
         Response responseContent = given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test Application 2 delete\"," +
-                "\"description\" : \"application 2 delete\"," +
-                "\"owner\": \"John Doe\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test Application 2 delete",
+                    "description" : "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application");
         Application response = responseContent.body().as(Application.class);

@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS ratings (
+CREATE TABLE IF NOT EXISTS comments (
     ticketId INT,
     commentText VARCHAR(255),
     userId INT
@@ -16,11 +16,11 @@ VALUES (1,'User from script', 'customer')
 ON CONFLICT do nothing;
 
 INSERT
-INTO ratings (ticketId, commentText, userId)
+INTO comments (ticketId, commentText, userId)
 VALUES (1,'I have problems from script', 1)
 ON CONFLICT do nothing;
 
 INSERT
-INTO ratings (ticketId, commentText, userId)
+INTO comments (ticketId, commentText, userId)
 VALUES (1,'Still have problems from script', 1)
 ON CONFLICT do nothing;

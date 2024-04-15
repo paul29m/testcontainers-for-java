@@ -48,17 +48,11 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
         @NotNull
         @Override
         public MockResponse dispatch(RecordedRequest request) {
-            assert request.getRequestUrl() != null;
             String releaseDate = request.getRequestUrl().queryParameter("releaseDate");
             String applicationName = request.getRequestUrl().queryParameter("applications");
 
             if (releaseDate != null && applicationName != null) {
-                if (releaseDate.equals("2025-12-31") && applicationName.contains("Test_V1")) {
-                    return new MockResponse().setResponseCode(200).setBody("v1.1.2025");
-                }
-                if (releaseDate.equals("2026-12-31") && applicationName.contains("Test_V2")) {
-                    return new MockResponse().setResponseCode(200).setBody("v2.1.2026");
-                }
+                    return new MockResponse().setResponseCode(200).setBody("v1");
             }
             return new MockResponse().setResponseCode(404);
         }
@@ -85,9 +79,12 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void addSoftwareRelease() {
         given(requestSpecification)
-            .body("{" +
-                "\"releaseDate\":\"2021-12-31\"," +
-                "\"description\":\"A test release\"}")
+            .body("""
+                {
+                    "releaseDate":"2021-12-31",
+                    "description":"A test release"
+                }
+                """)
             .when()
             .post("/api/softwareRelease")
             .then()
@@ -102,13 +99,16 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
     @Test
     public void addSoftwareReleaseWithApps() {
         given(requestSpecification)
-            .body("{" +
-                "\"releaseDate\":\"2021-12-31\"," +
-                "\"description\":\"A test release\"," +
-                "\"applications\": [" +
-                "{\"name\": \"New App1\", \"description\": \"App added with release\", \"owner\": \"Jane Doe\"}," +
-                "{\"name\": \"New App2\", \"description\": \"Another app added with release\", \"owner\": \"Jane Doe\"}" +
-                "]}")
+            .body("""
+                {
+                    "releaseDate": "2021-12-31",
+                    "description": "A test release",
+                    "applications": [
+                        {"name": "New App1", "description": "App added with release", "owner": "Jane Doe"},
+                        {"name": "New App2", "description": "Another app added with release", "owner": "Jane Doe"}
+                    ]
+                }
+                """)
             .when()
             .post("/api/softwareRelease")
             .then()
@@ -124,19 +124,24 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
     public void createLinkBetweenAppAndSoftwareRelease() {
         // create an application
         Response appResponse = given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test app\"," +
-                "\"description\" : \"A test application.\"," +
-                "\"owner\": \"Kate Williams\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test app",
+                    "description": "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application");
         Integer appId = getIdFromResponseHeader(appResponse);
         // create a release
         Response releaseResponse = given(requestSpecification)
-            .body("{" +
-                "\"releaseDate\":\"2024-12-31\"," +
-                "\"description\":\"A test release\"}")
+            .body("""
+                {
+                    "releaseDate": "2024-12-31",
+                    "description": "A test release"
+                }
+                """)
             .when()
             .post("/api/softwareRelease");
         Integer releaseId = getIdFromResponseHeader(releaseResponse);
@@ -157,20 +162,25 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
     public void findSoftwareReleaseWithTagsFromGit() {
         // create an application
         Response appResponse = given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test_V1\"," +
-                "\"description\" : \"A test application.\"," +
-                "\"owner\": \"Kate Williams\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test_V1",
+                    "description": "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application");
         Integer appId = getIdFromResponseHeader(appResponse);
         ;
         // create a release
         Response releaseResponse = given(requestSpecification)
-            .body("{" +
-                "\"releaseDate\":\"2025-12-31\"," +
-                "\"description\":\"A test release\"}")
+            .body("""
+                {
+                    "releaseDate": "2025-12-31",
+                    "description": "A test release"
+                }
+                """)
             .when()
             .post("/api/softwareRelease");
         Integer releaseId = getIdFromResponseHeader(releaseResponse);
@@ -180,9 +190,21 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
             .put("/api/softwareRelease/{appId}/{releaseId}", appId, releaseId)
             .then();
 
-//        gitClientMockWebServer.enqueue(new MockResponse().setBody(RELEASE_TAG)); //TODO add URL to work in parallel and to assure that this URL will be called by the test;
-        // did not find a solution
-        // create dispacher
+        // adjust the Dispatcher to include our testing data
+        gitClientMockWebServer.setDispatcher(new Dispatcher() {
+            @NotNull
+            @Override
+            public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
+                String releaseDate = request.getRequestUrl().queryParameter("releaseDate");
+                String applicationName = request.getRequestUrl().queryParameter("applications");
+
+                if (releaseDate != null && applicationName != null) {
+                    if (releaseDate.equals("2025-12-31") && applicationName.contains("Test_V1")) {
+                        return new MockResponse().setResponseCode(200).setBody("v1.1.2025");
+                    }
+                }
+                return new MockResponse().setResponseCode(404);            }
+        });
 
         given(requestSpecification)
             .when()
@@ -203,23 +225,28 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
      * Expects the body of the response to match the added release and contain the git Tag from the mock client.
      */
     @Test
-    public void findRelease2WithTagsFromGit() {
+    public void findSoftwareRelease2WithTagsFromGit() {
         // create an application
         Response appResponse = given(requestSpecification)
-            .body("{" +
-                "\"name\": \"Test_V2\"," +
-                "\"description\" : \"A test application.\"," +
-                "\"owner\": \"Kate Williams\"" +
-                "}")
+            .body("""
+                {
+                    "name": "Test_V2",
+                    "description": "A test application.",
+                    "owner": "Kate Williams"
+                }
+                """)
             .when()
             .post("/api/application");
         Integer appId = getIdFromResponseHeader(appResponse);
         ;
         // create a release
         Response releaseResponse = given(requestSpecification)
-            .body("{" +
-                "\"releaseDate\":\"2026-12-31\"," +
-                "\"description\":\"Test V2 release\"}")
+            .body("""
+                {
+                    "releaseDate": "2026-12-31",
+                    "description": "Test V2 release"
+                }
+                """)
             .when()
             .post("/api/softwareRelease");
         Integer releaseId = getIdFromResponseHeader(releaseResponse);
@@ -230,6 +257,22 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
             .put("/api/softwareRelease/{appId}/{rId}", appId, releaseId)
             .then()
             .statusCode(200);
+
+        gitClientMockWebServer.setDispatcher(new Dispatcher() {
+            @NotNull
+            @Override
+            public MockResponse dispatch(RecordedRequest request) {
+                String releaseDate = request.getRequestUrl().queryParameter("releaseDate");
+                String applicationName = request.getRequestUrl().queryParameter("applications");
+
+                if (releaseDate != null && applicationName != null) {
+                    if (releaseDate.equals("2026-12-31") && applicationName.contains("Test_V2")) {
+                        return new MockResponse().setResponseCode(200).setBody("v2.1.2026");
+                    }
+                }
+                return new MockResponse().setResponseCode(404);
+            }
+        });
 
         given(requestSpecification)
             .when()
@@ -248,9 +291,12 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
     public void findReleaseWithIncompleteData() {
         // create a release
         Response response = given(requestSpecification)
-            .body("{" +
-                "\"releaseDate\":\"2021-12-31\"," +
-                "\"description\":\"A test release\"}")
+            .body("""
+                {
+                    "releaseDate": "2021-12-31",
+                    "description": "A test release"
+                }
+                """)
             .when()
             .post("/api/softwareRelease");
         Integer releaseId = getIdFromResponseHeader(response);
@@ -277,7 +323,6 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
             .statusCode(200);
     }
 
-    @NotNull
     private static Integer getIdFromResponseHeader(Response response) {
         String headerWithId = response.getHeader("Location");
         return Integer.parseInt(headerWithId.substring(headerWithId.lastIndexOf("/") + 1));

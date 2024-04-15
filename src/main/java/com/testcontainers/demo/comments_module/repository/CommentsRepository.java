@@ -18,7 +18,7 @@ public class CommentsRepository implements ICommentsRepository {
     @Override
     public List<Comment> findAllByTicketId(Integer ticketId) {
         return jdbcTemplate.query(
-            "SELECT * FROM ratings WHERE ticketId = ?",
+            "SELECT * FROM comments WHERE ticketId = ?",
             (row, i) -> new Comment(row.getInt("ticketId"), row.getString("commentText"), row.getInt("userId")),
             ticketId
         );
@@ -26,12 +26,12 @@ public class CommentsRepository implements ICommentsRepository {
 
     @Override
     public void add(Integer ticketId, String commentText, Integer userId) {
-        jdbcTemplate.update("INSERT INTO ratings (ticketId, commentText, userId) VALUES (?, ?, ?)", ticketId, commentText, userId);
+        jdbcTemplate.update("INSERT INTO comments (ticketId, commentText, userId) VALUES (?, ?, ?)", ticketId, commentText, userId);
     }
 
     public Boolean exists(Integer ticketId) {
         List<Boolean> results = jdbcTemplate.query(
-            "SELECT 1 FROM ratings WHERE ticketId = ?",
+            "SELECT 1 FROM comments WHERE ticketId = ?",
             (row, i) -> true,
             ticketId
         );

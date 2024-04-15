@@ -12,7 +12,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Controller class for managing ratings.
+ * Controller class for managing comments.
  */
 @RestController
 @RequestMapping("api/comments")
