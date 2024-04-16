@@ -3,19 +3,12 @@ package com.testcontainers.demo.integration;
 import com.testcontainers.demo.config.BaseRestAssuredIntegrationTest;
 import com.testcontainers.demo.config.PgContainerConfig;
 import io.restassured.response.Response;
-import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
@@ -36,43 +29,21 @@ import static org.hamcrest.Matchers.*;
 )
 public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ApiSoftwareReleaseTest.class);
-
-    public static MockWebServer gitClientMockWebServer;
-
-    /*
-     * Dispatcher can be used to mock the GitClient service responses by using the query parameters
-     */
-    final static Dispatcher dispatcher = new Dispatcher() {
-
-        @NotNull
-        @Override
-        public MockResponse dispatch(RecordedRequest request) {
-            String releaseDate = request.getRequestUrl().queryParameter("releaseDate");
-            String applicationName = request.getRequestUrl().queryParameter("applications");
-
-            if (releaseDate != null && applicationName != null) {
-                    return new MockResponse().setResponseCode(200).setBody("v1");
-            }
-            return new MockResponse().setResponseCode(404);
-        }
-    };
+    public MockWebServer gitClientMockWebServer = new MockWebServer();
 
     @BeforeEach
     public void setUpIntegrationTest() {
         this.setUpAbstractIntegrationTest();
     }
 
-    @BeforeAll
-    static void setUp() throws IOException {
+    @BeforeEach
+    public void setUp() throws IOException {
         gitClientMockWebServer = new MockWebServer();
-        gitClientMockWebServer.setDispatcher(dispatcher);
         gitClientMockWebServer.start(9091);
-        // TODO gitClientMockWebServer.
     }
 
-    @AfterAll
-    public static void tearDown() throws IOException {
+    @AfterEach
+    public void tearDown() throws IOException {
         gitClientMockWebServer.shutdown();
     }
 
@@ -159,7 +130,7 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
      * Expects the body of the response to match the added release and contain the git Tag specific to the release and application from the mock client.
      */
     @Test
-    public void findSoftwareReleaseWithTagsFromGit() {
+    public void findSoftwareReleaseWithTagsFromGit() throws InterruptedException {
         // create an application
         Response appResponse = given(requestSpecification)
             .body("""
@@ -190,21 +161,7 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
             .put("/api/softwareRelease/{appId}/{releaseId}", appId, releaseId)
             .then();
 
-        // adjust the Dispatcher to include our testing data
-        gitClientMockWebServer.setDispatcher(new Dispatcher() {
-            @NotNull
-            @Override
-            public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
-                String releaseDate = request.getRequestUrl().queryParameter("releaseDate");
-                String applicationName = request.getRequestUrl().queryParameter("applications");
-
-                if (releaseDate != null && applicationName != null) {
-                    if (releaseDate.equals("2025-12-31") && applicationName.contains("Test_V1")) {
-                        return new MockResponse().setResponseCode(200).setBody("v1.1.2025");
-                    }
-                }
-                return new MockResponse().setResponseCode(404);            }
-        });
+        gitClientMockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody("v1.1.2025"));
 
         given(requestSpecification)
             .when()
@@ -217,6 +174,10 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
             .body("applications.name", contains("Test_V1"))
             .body("applications.description", contains("A test application."))
             .body("gitTags", contains("v1.1.2025"));
+
+        RecordedRequest request = gitClientMockWebServer.takeRequest();
+        Assertions.assertEquals(request.getRequestUrl().queryParameter("releaseDate"), "2025-12-31");
+        Assertions.assertEquals(request.getRequestUrl().queryParameter("applications"), "[Test_V1]");
     }
 
     /**
@@ -225,7 +186,7 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
      * Expects the body of the response to match the added release and contain the git Tag from the mock client.
      */
     @Test
-    public void findSoftwareRelease2WithTagsFromGit() {
+    public void findSoftwareRelease2WithTagsFromGit() throws InterruptedException {
         // create an application
         Response appResponse = given(requestSpecification)
             .body("""
@@ -258,21 +219,7 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
             .then()
             .statusCode(200);
 
-        gitClientMockWebServer.setDispatcher(new Dispatcher() {
-            @NotNull
-            @Override
-            public MockResponse dispatch(RecordedRequest request) {
-                String releaseDate = request.getRequestUrl().queryParameter("releaseDate");
-                String applicationName = request.getRequestUrl().queryParameter("applications");
-
-                if (releaseDate != null && applicationName != null) {
-                    if (releaseDate.equals("2026-12-31") && applicationName.contains("Test_V2")) {
-                        return new MockResponse().setResponseCode(200).setBody("v2.1.2026");
-                    }
-                }
-                return new MockResponse().setResponseCode(404);
-            }
-        });
+        gitClientMockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody("v2.1.2026"));
 
         given(requestSpecification)
             .when()
@@ -285,6 +232,10 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
             .body("applications.name", contains("Test_V2"))
             .body("applications.description", contains("A test application."))
             .body("gitTags", contains("v2.1.2026"));
+
+        RecordedRequest request = gitClientMockWebServer.takeRequest();
+        Assertions.assertEquals(request.getRequestUrl().queryParameter("releaseDate"), "2026-12-31");
+        Assertions.assertEquals(request.getRequestUrl().queryParameter("applications"), "[Test_V2]");
     }
 
     @Test
@@ -299,7 +250,10 @@ public class ApiSoftwareReleaseTest extends BaseRestAssuredIntegrationTest {
                 """)
             .when()
             .post("/api/softwareRelease");
+
         Integer releaseId = getIdFromResponseHeader(response);
+
+        gitClientMockWebServer.enqueue(new MockResponse().setResponseCode(404));
 
         given(requestSpecification)
             .when()

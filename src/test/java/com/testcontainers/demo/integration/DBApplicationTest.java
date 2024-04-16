@@ -7,21 +7,12 @@ import com.testcontainers.demo.config.BaseRestAssuredIntegrationTest;
 import com.testcontainers.demo.config.PgContainerConfig;
 import com.testcontainers.demo.entity.Application;
 import io.restassured.response.Response;
-import org.apache.commons.lang3.time.StopWatch;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
-import org.testcontainers.containers.PostgreSQLContainer;
-
-import java.util.concurrent.TimeUnit;
 
 /*
  * Test class using the approach of having a configuration class with the testcontainers configurations
@@ -36,29 +27,9 @@ import java.util.concurrent.TimeUnit;
 )
 public class DBApplicationTest extends BaseRestAssuredIntegrationTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DBApplicationTest.class);
-    private static StopWatch watch;
-
-    @Autowired
-    private PostgreSQLContainer postgresContainer;
-
-    @BeforeAll
-    public static void setUp() {
-        LOG.info("Test setUp At: " + java.time.LocalDateTime.now());
-        watch = new StopWatch();
-        watch.start();
-    }
-
     @BeforeEach
     public void setUpIntegrationTest() {
         this.setUpAbstractIntegrationTest();
-    }
-
-    @AfterAll
-    public static void tearDown() {
-        watch.stop();
-        float time = (float) watch.getTime(TimeUnit.MILLISECONDS);
-        LOG.info("Test tearDown At: {}, duration: {}", java.time.LocalDateTime.now(), time / 1000);
     }
 
     /**
